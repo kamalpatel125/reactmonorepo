@@ -1,0 +1,16 @@
+{
+  "name": "react-mono-repo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start-ofm": "pnpm --filter orderflow-manager dev",
+    "start-pv": "pnpm --filter portfolio-viewer dev",
+    "start-app-builder": "pnpm --filter app-builder dev",
+    "build-ofm": "pnpm --filter orderflow-manager build",
+    "build-pv": "pnpm --filter portfolio-viewer build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
