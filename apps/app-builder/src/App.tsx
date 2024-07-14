@@ -54,13 +54,13 @@ const App: React.FC = () => {
                 }));
             });
             log('All tasks executed successfully');
-        } catch (err) {
+        } catch (err: any) {
             log(`Error: ${err.message}`);
         }
     };
 
     const handleManualTask = () => {
-        if (currentManualTask && currentManualTask.resolve) {
+        if (currentManualTask && currentManualTask?.resolve) {
             currentManualTask.resolve();
             setCurrentManualTask(null);
         }

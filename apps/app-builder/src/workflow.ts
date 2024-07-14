@@ -5,11 +5,13 @@ export class Task {
     id: string;
     execute: (input?: any) => Promise<any>;
     mode: TaskMode;
+    resolve?: Function;
 
-    constructor(id: string, mode: TaskMode, execute: (input?: any) => Promise<any>) {
+    constructor(id: string, mode: TaskMode, execute: (input?: any) => Promise<any>, resolve?: Function) {
         this.id = id;
         this.execute = execute;
         this.mode = mode;
+        this.resolve = resolve;
     }
 }
 
@@ -52,11 +54,11 @@ export class DAG {
             if (task) {
                 const inputs = dependencies.map(depId => results.get(depId));
                 const input = inputs.length > 1 ? inputs : inputs[0];
-                
+
                 if (task.mode === 'manual') {
                     await onManualTask(task);
                 }
-                
+
                 const output = await task.execute(input);
                 results.set(taskId, output);
             }
