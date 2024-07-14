@@ -43,6 +43,7 @@ const App: React.FC = () => {
 
         const dag = new DAG();
 
+        // Workflow Task (Steps)
         dag.addTask(taskA);
         dag.addTask(taskB);
         dag.addTask(taskC);
@@ -50,13 +51,14 @@ const App: React.FC = () => {
         dag.addTask(taskE);
         dag.addTask(taskF);
 
+        // Workflow Task Dependencies 
         dag.addDependency('B', 'A'); // B depends on A - Automatic
         dag.addDependency('C', 'A'); // C depends on A - Manual
         dag.addDependency('D', 'B'); // D depends on B - Automatic
         dag.addDependency('D', 'C'); // D depends on C - Automatic
         dag.addDependency('E', 'D'); // E depends on D - Manual
         dag.addDependency('F', 'E'); // F depends on E - Automatic
-        /* 
+        /* Workflow Steps
                   A
                   | 
                 B - C M)
@@ -67,7 +69,6 @@ const App: React.FC = () => {
                   |
                   F
         */
-
         try {
             await dag.execute(async (task) => {
                 setCurrentManualTask(task);
