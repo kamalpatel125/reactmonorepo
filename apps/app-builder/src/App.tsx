@@ -1,6 +1,6 @@
 // src/App.tsx
 import React, { useState, useEffect } from 'react';
-import { Task, DAG, TaskMode } from './workflow';
+import { Task, DAG } from './workflow';
 
 const App: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([]);
@@ -31,17 +31,42 @@ const App: React.FC = () => {
             return `Output of Task D derived from ${input}`;
         });
 
+        const taskE = new Task('E', 'manual', async (input) => {
+          log(`Executing Task E with input: ${input}`);
+          return `Output of Task E derived from ${input}`;
+      });
+
+      const taskF = new Task('F', 'automatic', async (input) => {
+        log(`Executing Task F with input: ${input}`);
+        return `Output of Task F derived from ${input}`;
+    });
+
         const dag = new DAG();
 
         dag.addTask(taskA);
         dag.addTask(taskB);
         dag.addTask(taskC);
         dag.addTask(taskD);
+        dag.addTask(taskE);
+        dag.addTask(taskF);
 
-        dag.addDependency('B', 'A'); // B depends on A
-        dag.addDependency('C', 'A'); // C depends on A
-        dag.addDependency('D', 'B'); // D depends on B
-        dag.addDependency('D', 'C'); // D depends on C
+        dag.addDependency('B', 'A'); // B depends on A - Automatic
+        dag.addDependency('C', 'A'); // C depends on A - Manual
+        dag.addDependency('D', 'B'); // D depends on B - Automatic
+        dag.addDependency('D', 'C'); // D depends on C - Automatic
+        dag.addDependency('E', 'D'); // E depends on D - Manual
+        dag.addDependency('F', 'E'); // F depends on E - Automatic
+        /* 
+                  A
+                  | 
+                B - C M)
+                  |
+                  D
+                  |
+                  E (M)
+                  |
+                  F
+        */
 
         try {
             await dag.execute(async (task) => {
