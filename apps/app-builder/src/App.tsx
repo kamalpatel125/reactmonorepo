@@ -1,43 +1,94 @@
-import PortfolioViewer from "../../portfolio-viewer";
-import OrderflowManager from "../../orderflow-manager";
-import { Link, Outlet, Route, Routes } from "react-router-dom";
+// src/App.tsx
+import React, { useState, useEffect } from 'react';
+import { Task, DAG, TaskMode } from './workflow';
 
-function App() {
-  return (
-    <>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="portfolio-viewer" element={<PortfolioViewer />} />
-          <Route path="order-manager" element={<OrderflowManager />} />
-        </Route>
-      </Routes>
-    </>
-  )
-}
+const App: React.FC = () => {
+    const [logs, setLogs] = useState<string[]>([]);
+    const [currentManualTask, setCurrentManualTask] = useState<Task | null>(null);
 
-function Layout() {
-  return (
-    <div>
-      <nav>
-        <ul>
-          <li><Link to="/">Home</Link>          </li>
-          <li><Link to="/portfolio-viewer">Portfolio Viewer</Link> </li>
-          <li><Link to="/order-manager">Order Manager</Link> </li>
-        </ul>
-      </nav>
-      <Outlet />
-      <hr />
-    </div>
-  )
-}
+    const log = (message: string) => {
+        setLogs(prevLogs => [...prevLogs, message]);
+    };
 
-function Home() {
-  return (
-    <div>
-      <h2>Home</h2>
-    </div>
-  );
-}
+    const runWorkflow = async () => {
+        const taskA = new Task('A', 'automatic', async () => {
+            log('Executing Task A');
+            return 'Output of Task A';
+        });
 
-export default App
+        const taskB = new Task('B', 'automatic', async (input) => {
+            log(`Executing Task B with input: ${input}`);
+            return `Output of Task B derived from ${input}`;
+        });
+
+        const taskC = new Task('C', 'manual', async (input) => {
+            log(`Executing Task C with input: ${input}`);
+            return `Output of Task C derived from ${input}`;
+        });
+
+        const taskD = new Task('D', 'automatic', async (input) => {
+            log(`Executing Task D with input: ${input}`);
+            return `Output of Task D derived from ${input}`;
+        });
+
+        const dag = new DAG();
+
+        dag.addTask(taskA);
+        dag.addTask(taskB);
+        dag.addTask(taskC);
+        dag.addTask(taskD);
+
+        dag.addDependency('B', 'A'); // B depends on A
+        dag.addDependency('C', 'A'); // C depends on A
+        dag.addDependency('D', 'B'); // D depends on B
+        dag.addDependency('D', 'C'); // D depends on C
+
+        try {
+            await dag.execute(async (task) => {
+                setCurrentManualTask(task);
+                await new Promise(resolve => setCurrentManualTask(prev => {
+                    if (prev !== null) {
+                        return { ...prev, resolve };
+                    }
+                    return prev;
+                }));
+            });
+            log('All tasks executed successfully');
+        } catch (err) {
+            log(`Error: ${err.message}`);
+        }
+    };
+
+    const handleManualTask = () => {
+        if (currentManualTask && currentManualTask.resolve) {
+            currentManualTask.resolve();
+            setCurrentManualTask(null);
+        }
+    };
+
+    useEffect(() => {
+        runWorkflow(); // Execute the workflow on component mount
+    }, []);
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <h1>DAG Workflow Example</h1>
+            <div>
+                <h2>Logs:</h2>
+                <ul>
+                    {logs.map((log, index) => (
+                        <li key={index}>{log}</li>
+                    ))}
+                </ul>
+            </div>
+            {currentManualTask && (
+                <div>
+                    <h2>Manual Task: {currentManualTask.id}</h2>
+                    <button onClick={handleManualTask}>Run {currentManualTask.id}</button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default App;

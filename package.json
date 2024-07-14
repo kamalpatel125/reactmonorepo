@@ -6,7 +6,7 @@
   "scripts": {
     "start-ofm": "pnpm --filter orderflow-manager dev",
     "start-pv": "pnpm --filter portfolio-viewer dev",
-    "start-app-builder": "pnpm --filter app-builder dev",
+    "start-app": "pnpm --filter app-builder dev",
     "build-ofm": "pnpm --filter orderflow-manager build",
     "build-pv": "pnpm --filter portfolio-viewer build"
   },

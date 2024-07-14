@@ -9,10 +9,10 @@ import './index.css'
 export const start = () => {
   const rootElement = document.getElementById('root')!;
   ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
+    
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </React.StrictMode>
+    
   )
 }

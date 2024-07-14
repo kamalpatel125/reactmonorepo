@@ -11,6 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@loadable/component": "^5.16.4",
+    "@types/loadable__component": "^5.13.9",
+    "orderflow-manager": "workspace:*",
+    "portfolio-viewer": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "shared-ui": "workspace:*"
