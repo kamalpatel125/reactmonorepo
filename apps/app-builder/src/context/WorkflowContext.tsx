@@ -62,7 +62,7 @@ const taskFunctions = {
 };
 
 class Task {
-    constructor(public id: string, public mode: 'automatic' | 'manual', public funcId: string) {}
+    constructor(public id: string, public mode: 'automatic' | 'manual', public funcId: string) { }
 
     async execute(input: any) {
         if (taskFunctions[this.funcId]) {
@@ -216,7 +216,18 @@ export const WorkflowProvider: React.FC = ({ children }) => {
     };
 
     return (
-        <WorkflowContext.Provider value={{ tasks, dependencies, currentManualTask, logs, addTask, addDependency, saveWorkflow, loadWorkflow, executeWorkflow, completeManualTask }}>
+        <WorkflowContext.Provider value={{
+            tasks,
+            dependencies,
+            currentManualTask,
+            logs,
+            addTask,
+            addDependency,
+            saveWorkflow,
+            loadWorkflow,
+            executeWorkflow,
+            completeManualTask
+        }}>
             {children}
         </WorkflowContext.Provider>
     );
