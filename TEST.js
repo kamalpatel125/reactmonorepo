@@ -82,3 +82,38 @@ async function fetchWithCancellation(endpoint, options = {}) {
     throw error;
   }
 }
+
+
+
+async function decompressGzip(compressedData) {
+    const compressedBuffer = Uint8Array.from(atob(compressedData), c => c.charCodeAt(0));
+    const stream = new ReadableStream({
+        start(controller) {
+            controller.enqueue(compressedBuffer);
+            controller.close();
+        }
+    });
+
+    const decompressionStream = new DecompressionStream("gzip");
+    const decompressedStream = stream.pipeThrough(decompressionStream);
+    const reader = decompressedStream.getReader();
+
+    let result = '';
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+    }
+    result += decoder.decode();
+
+    return result;
+}
+
+// Usage
+connection.on("ReceiveCompressedMessage", async (compressedData) => {
+    const decompressedMessage = await decompressGzip(compressedData);
+    console.log("Decompressed Message:", decompressedMessage);
+});
+
