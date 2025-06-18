@@ -344,6 +344,23 @@ export default Resizable;
 
 
 
+import React from 'react';
+import Resizable from './components/Resizable';
+
+const App = () => {
+  return (
+    <div style={{ padding: 50 }}>
+      <Resizable defaultWidth={400} defaultHeight={250}>
+        <div style={{ width: '100%', height: '100%', padding: 10 }}>
+          <h3>Resizable from all sides</h3>
+          <p>Try dragging any edge or corner.</p>
+        </div>
+      </Resizable>
+    </div>
+  );
+};
+
+export default App;
 
 
 
