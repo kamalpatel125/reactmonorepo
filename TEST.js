@@ -364,6 +364,84 @@ export default App;
 
 
 
+import React, { useState, useEffect } from "react";
+
+export default function PriceTypeValueFilter(props: any) {
+  const [type, setType] = useState<"all" | "stale" | "future">("all");
+  const [priceQuery, setPriceQuery] = useState("");
+
+  useEffect(() => {
+    props.filterChangedCallback();
+  }, [type, priceQuery]);
+
+  // AG Grid lifecycle
+  const isFilterActive = () => type !== "all" || priceQuery.trim() !== "";
+
+  const doesFilterPass = (params: any) => {
+    const { isStale, isFuture, price } = params.data;
+
+    // --- filter by type ---
+    if (type === "stale" && !isStale) return false;
+    if (type === "future" && !isFuture) return false;
+
+    // --- filter by numeric input ---
+    if (priceQuery) {
+      const match = priceQuery.match(/(>=|<=|>|<|=)?\s*(\d+(\.\d+)?)/);
+      if (match) {
+        const operator = match[1] || "=";
+        const value = parseFloat(match[2]);
+
+        switch (operator) {
+          case ">": return price > value;
+          case "<": return price < value;
+          case ">=": return price >= value;
+          case "<=": return price <= value;
+          case "=": return price === value;
+          default: return true;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  const getModel = () => ({ type, priceQuery });
+  const setModel = (model: any) => {
+    if (model) {
+      setType(model.type);
+      setPriceQuery(model.priceQuery);
+    }
+  };
+
+  return (
+    <div style={{ padding: 8, width: 180 }}>
+      <div style={{ marginBottom: 6 }}>
+        <label>Type: </label>
+        <select value={type} onChange={e => setType(e.target.value as any)}>
+          <option value="all">All</option>
+          <option value="stale">⚠️ Stale</option>
+          <option value="future">⏳ Future</option>
+        </select>
+      </div>
+      <div>
+        <label>Price: </label>
+        <input
+          style={{ width: "100%" }}
+          type="text"
+          value={priceQuery}
+          onChange={e => setPriceQuery(e.target.value)}
+          placeholder="> 100"
+        />
+      </div>
+    </div>
+  );
+}
+
+// attach AG Grid filter API
+(PriceTypeValueFilter as any).prototype.isFilterActive = function () { return false; };
+(PriceTypeValueFilter as any).prototype.doesFilterPass = function () { return false; };
+(PriceTypeValueFilter as any).prototype.getModel = function () { return null; };
+(PriceTypeValueFilter as any).prototype.setModel = function () {};
 
 
 
