@@ -451,6 +451,114 @@ export default function PriceTypeValueFilter(props: any) {
 
 
 
+// MySimpleSetFilter.tsx
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import {
+  IFilterComp,
+  IFilterParams,
+  IDoesFilterPassParams,
+} from "ag-grid-community";
+
+const MySimpleSetFilter = forwardRef<IFilterComp, IFilterParams>((props, ref) => {
+  const [allValues, setAllValues] = useState<string[]>([]);
+  const [selectedValues, setSelectedValues] = useState<Set<string>>(new Set());
+
+  // function to refresh values list
+  const refreshValues = () => {
+    const values = new Set<string>();
+    props.api.forEachNodeAfterFilterAndSort((node) => {
+      const v = props.valueGetter(node);
+      if (v != null) values.add(String(v));
+    });
+    const unique = Array.from(values).sort();
+    setAllValues(unique);
+
+    // if selected values are empty (first load), select all
+    if (selectedValues.size === 0) {
+      setSelectedValues(new Set(unique));
+    } else {
+      // clean up removed values
+      const stillValid = new Set(
+        Array.from(selectedValues).filter((v) => unique.includes(v))
+      );
+      setSelectedValues(stillValid);
+    }
+  };
+
+  // refresh on init + whenever other filters change
+  useEffect(() => {
+    refreshValues();
+    props.api.addEventListener("filterChanged", refreshValues);
+    return () => {
+      props.api.removeEventListener("filterChanged", refreshValues);
+    };
+  }, []);
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedValues(checked ? new Set(allValues) : new Set());
+    props.filterChangedCallback();
+  };
+
+  const toggleValue = (val: string, checked: boolean) => {
+    const newSet = new Set(selectedValues);
+    if (checked) newSet.add(val);
+    else newSet.delete(val);
+    setSelectedValues(newSet);
+    props.filterChangedCallback();
+  };
+
+  useImperativeHandle(ref, () => ({
+    isFilterActive() {
+      return selectedValues.size !== allValues.length;
+    },
+    doesFilterPass(params: IDoesFilterPassParams) {
+      const value = props.valueGetter(params.node);
+      return selectedValues.has(String(value));
+    },
+    getModel() {
+      return { values: Array.from(selectedValues) };
+    },
+    setModel(model: any) {
+      if (model?.values) {
+        setSelectedValues(new Set(model.values));
+      } else {
+        setSelectedValues(new Set(allValues));
+      }
+    },
+  }));
+
+  const allSelected = selectedValues.size === allValues.length;
+
+  return (
+    <div style={{ padding: 4 }}>
+      {/* Select All */}
+      <label style={{ display: "block", fontWeight: "bold" }}>
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={(e) => toggleSelectAll(e.target.checked)}
+        />
+        Select All
+      </label>
+
+      {/* Values */}
+      <div style={{ maxHeight: 150, overflowY: "auto" }}>
+        {allValues.map((val) => (
+          <label key={val} style={{ display: "block" }}>
+            <input
+              type="checkbox"
+              checked={selectedValues.has(val)}
+              onChange={(e) => toggleValue(val, e.target.checked)}
+            />
+            {val}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export default MySimpleSetFilter;
 
 
 
