@@ -1,0 +1,134 @@
+import React, { useRef, useState, useCallback } from "react";
+import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+import {
+  GridReadyEvent,
+  GridApi,
+  ColumnApi,
+  ColDef,
+} from "ag-grid-community";
+
+export default function BuiltInAggregationSummary() {
+  const mainApi = useRef<GridApi | null>(null);
+  const mainColumnApi = useRef<ColumnApi | null>(null);
+  const [summaryData, setSummaryData] = useState<any[]>([]);
+
+  const rowData = [
+    { country: "UK", currency: "GBP", finalValue: 20, tax: 2 },
+    { country: "UK", currency: "GBP", finalValue: 30, tax: 3 },
+    { country: "USA", currency: "USD", finalValue: 25, tax: 2 },
+    { country: "USA", currency: "USD", finalValue: 25, tax: 2 },
+    { country: "France", currency: "EUR", finalValue: 30, tax: 3 },
+  ];
+
+  const columnDefs: ColDef[] = [
+    { field: "country", enableRowGroup: true },
+    { field: "currency", enableRowGroup: true },
+    { field: "finalValue", enableValue: true, aggFunc: "sum" },
+    { field: "tax", enableValue: true, aggFunc: "sum" },
+  ];
+
+  // --- extract AG Grid’s own group aggregates ---
+  const extractGroupAggregates = useCallback(
+    (groupField: string): any[] => {
+      if (!mainApi.current || !mainColumnApi.current) return [];
+      mainColumnApi.current.setRowGroupColumns([groupField]);
+      mainApi.current.refreshClientSideRowModel("group");
+      const results: any[] = [];
+
+      // traverse grouped nodes (aggregated)
+      mainApi.current.forEachNodeAfterFilterAndSort((node) => {
+        if (node.group && node.aggData) {
+          results.push({
+            [groupField]: node.key,
+            ...node.aggData,
+          });
+        }
+      });
+      return results;
+    },
+    []
+  );
+
+  const refreshSummary = useCallback(() => {
+    if (!mainApi.current) return;
+
+    const sections = [
+      { title: "Country", field: "country" },
+      { title: "Currency", field: "currency" },
+    ];
+
+    const combined: any[] = [];
+    for (const section of sections) {
+      combined.push({ attribute: section.title, isHeader: true });
+      const groupData = extractGroupAggregates(section.field);
+      groupData.forEach((g) =>
+        combined.push({
+          attribute: "   " + g[section.field],
+          finalValue: g.finalValue,
+          tax: g.tax,
+        })
+      );
+    }
+    setSummaryData(combined);
+  }, [extractGroupAggregates]);
+
+  // --- GridReady ---
+  const onGridReady = (params: GridReadyEvent) => {
+    mainApi.current = params.api;
+    mainColumnApi.current = params.columnApi;
+    refreshSummary();
+  };
+
+  // --- auto refresh on filter/sort/edit ---
+  const onModelUpdated = useCallback(() => {
+    // debounce a bit for large data
+    clearTimeout((window as any)._summaryTimer);
+    (window as any)._summaryTimer = setTimeout(refreshSummary, 100);
+  }, [refreshSummary]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <h3>Main Grid (Built-in Aggregation)</h3>
+      <div className="ag-theme-alpine" style={{ height: 300, width: 700 }}>
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs}
+          defaultColDef={{
+            flex: 1,
+            resizable: true,
+            sortable: true,
+            filter: true,
+            editable: true,
+          }}
+          animateRows={true}
+          onGridReady={onGridReady}
+          onModelUpdated={onModelUpdated}
+        />
+      </div>
+
+      <h3>Summary Grid (Country + Currency)</h3>
+      <div className="ag-theme-alpine" style={{ height: 400, width: 700 }}>
+        <AgGridReact
+          rowData={summaryData}
+          columnDefs={[
+            { field: "attribute", headerName: "Attribute" },
+            { field: "finalValue", headerName: "Final Value" },
+            { field: "tax", headerName: "Tax" },
+          ]}
+          defaultColDef={{ flex: 1, resizable: true }}
+          getRowClass={(p) => (p.data.isHeader ? "header-row" : "")}
+        />
+      </div>
+
+      <style>{`
+        .header-row {
+          font-weight: bold;
+          background: #f3f3f3;
+          border-top: 2px solid #ccc;
+        }
+      `}</style>
+    </div>
+  );
+}
